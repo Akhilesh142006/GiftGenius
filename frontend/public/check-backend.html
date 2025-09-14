@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Backend Status Check</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        #status { padding: 20px; border-radius: 8px; margin-top: 20px; }
+        .loading { background: #f0f8ff; border: 1px solid #4A90E2; }
+        .success { background: #d4f7d4; border: 1px solid #7ED321; }
+        .error { background: #ffebee; border: 1px solid #e74c3c; }
+    </style>
+</head>
+<body>
+    <h2>🔍 Backend Status Check</h2>
+    <p>This page checks if your backend is running and if the database has been seeded.</p>
+    <div id="status" class="loading">Checking backend status...</div>
+    
+    <script>
+        const checkBackend = async () => {
+            const statusDiv = document.getElementById('status');
+            
+            try {
+                console.log('🔍 Checking backend status...');
+                
+                // Check if backend is running
+                const response = await fetch('http://localhost:5000/health');
+                const data = await response.json();
+                
+                console.log('✅ Backend is running!');
+                console.log('Status:', data);
+                
+                let statusText = '<h3>✅ Backend is running!</h3>';
+                statusText += `<p><strong>Database:</strong> ${data.database?.name || 'Unknown'}</p>`;
+                
+                // Check database
+                if (data.database) {
+                    if (data.database.giftCount > 0) {
+                        console.log(`✅ Database has ${data.database.giftCount} gifts`);
+                        statusText += `<p>✅ <strong>Database has ${data.database.giftCount} gifts</strong></p>`;
+                        statusText += '<p style="color: green;">🎉 Everything looks good! Your application should work.</p>';
+                        statusDiv.className = 'success';
+                    } else {
+                        console.log('❌ Database is empty - run: npm run seed');
+                        statusText += '<p>❌ <strong>Database is empty</strong></p>';
+                        statusText += '<p style="color: orange;">⚠️ Run <code>npm run seed</code> in the backend directory to fix this.</p>';
+                        statusDiv.className = 'error';
+                    }
+                } else {
+                    statusText += '<p>❓ Database status unknown</p>';
+                    statusDiv.className = 'error';
+                }
+                
+                statusDiv.innerHTML = statusText;
+                
+            } catch (error) {
+                console.log('❌ Backend not running on port 5000');
+                console.log('💡 Start backend with: npm run dev');
+                
+                statusDiv.innerHTML = `
+                    <h3>❌ Backend not running</h3>
+                    <p>Cannot connect to backend on <code>http://localhost:5000</code></p>
+                    <p style="color: red;">💡 <strong>Start backend with:</strong> <code>npm run dev</code></p>
+                    <p>Make sure you're in the backend directory when running the command.</p>
+                `;
+                statusDiv.className = 'error';
+            }
+        };
+        
+        checkBackend();
+        
+        // Auto-refresh every 5 seconds
+        setInterval(checkBackend, 5000);
+    </script>
+</body>
+</html>
